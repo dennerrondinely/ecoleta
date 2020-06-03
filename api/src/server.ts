@@ -1,17 +1,31 @@
 import express from 'express'
 
 const app = express()
+app.use(express.json())
 
-app.get('/users', (request, response) => {
-  console.log('Listagem de usuários')
+const users = [
+  {
+    nome: 'Denner',
+    email: 'teste@teste.com.br'
+  },
+  {
+    nome: 'Wellington',
+    email: 'teste@teste.com.br'
+  },
+  {
+    nome: 'Bruna',
+    email: 'teste@teste.com.br'
+  },
+  {
+    nome: 'Fernando',
+    email: 'teste@teste.com.br'
+  }
+]
 
-  response.json([
-    { nome: 'Denner' },
-    { nome: 'Wellington' },
-    { nome: 'Bruna' },
-    { nome: 'Fernando' }
-  ])
+app.get('/', (request, response) => {
+  return response.send('🚀 Bem Vindo ao Ecoleta! ♻')
 })
+
 
 app.listen(3333, () => {
   console.log('🚀 Executando na porta :3333')
