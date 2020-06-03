@@ -1,0 +1,10 @@
+{
+  "sqltools.connections": [
+    {
+      "database": "\\\\wsl$\\Ubuntu-20.04\\home\\dennerrondinely\\Development\\ecoleta\\api\\src\\database\\database.sqlite",
+      "driver": "SQLite",
+      "name": "eco",
+      "previewLimit": 50
+    }
+  ]
+}
