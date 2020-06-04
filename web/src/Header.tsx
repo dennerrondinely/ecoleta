@@ -1,9 +1,15 @@
-import React from 'react'
+import React, { FC } from 'react'
 
-export default function Header() {
+interface HeaderProps {
+  title: string
+}
+
+const Header: FC<HeaderProps> = ({ title }) => {
   return (
     <header>
-      <h1>Ecoleta</h1>
+      <h1>{title}</h1>
     </header>
   )
 }
+
+export default Header
