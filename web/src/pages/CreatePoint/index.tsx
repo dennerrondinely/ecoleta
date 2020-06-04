@@ -1,13 +1,78 @@
-import React from 'react';
+import React, { useEffect, useState, ChangeEvent } from 'react';
 import { Link } from 'react-router-dom'
 import { FiArrowLeft } from 'react-icons/fi'
 import { Map, TileLayer, Marker } from 'react-leaflet'
+import { LeafletMouseEvent } from 'leaflet'
+import api from '../../services/api'
 
 import logo from '../../assets/logo.svg'
 
 import './styles.css';
+import axios from 'axios';
+
+interface Item {
+  id: number
+  name: string
+  imageUrl: string
+}
+interface IBGUFResponse {
+  sigla: string
+}
+interface IBGCITYResponse {
+  nome: string
+}
 
 const CreatePoint = () => {
+  const [items, setItems] = useState<Item[]>([])
+  const [ufs, setUfs] = useState<string[]>([])
+  const [cities, setCities] = useState<string[]>([])
+  const [selectedCity, setSelectedCity] = useState('')
+  const [selectedUf, setSelectedUf] = useState('')
+  const [selectedPosition, setSelectedPosition] = useState<[number, number]>([0, 0])
+  const [initialPosition, setInitialPosition] = useState<[number, number]>([0, 0])
+
+  useEffect(() => {
+    api('/items').then(resp => {
+      setItems(resp.data)
+    })
+  }, [])
+
+  useEffect(() => {
+    axios.get<IBGUFResponse[]>('https://servicodados.ibge.gov.br/api/v1/localidades/estados').then(response => {
+      const ufInitials = response.data.map(uf => uf.sigla)
+      setUfs(ufInitials)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!selectedUf) return;
+    axios.get<IBGCITYResponse[]>(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedUf}/municipios`)
+      .then(response => {
+        const cityNames = response.data.map(city => city.nome)
+        setCities(cityNames)
+      })
+  }, [selectedUf])
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(position => {
+      const { latitude, longitude } = position.coords
+      setInitialPosition([latitude, longitude])
+      setSelectedPosition([latitude, longitude])
+    })
+  }, [])
+
+  function handelSelectedUf(event: ChangeEvent<HTMLSelectElement>) {
+    const uf = event.target.value
+    setSelectedUf(uf)
+  }
+  function handelSelectedCity(event: ChangeEvent<HTMLSelectElement>) {
+    const city = event.target.value
+    setSelectedCity(city)
+  }
+  function handelMapClick(event: LeafletMouseEvent) {
+    setSelectedPosition([event.latlng.lat, event.latlng.lng])
+  }
+
   return (
     <div id="page-create-point">
       <header>
@@ -60,25 +125,31 @@ const CreatePoint = () => {
             </h2>
             <span>Selecione um endereço no mapa</span>
           </legend>
-          <Map center={[-21.695292, -43.4479465]} zoom={17}>
+          <Map center={initialPosition} zoom={17} onClick={handelMapClick}>
             <TileLayer
               attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <Marker position={[-21.695292, -43.4479465]}/>
+            <Marker position={selectedPosition} />
           </Map>
 
           <div className="field-group">
             <div className="field">
               <label htmlFor="uf">Estado (UF)</label>
-              <select name="uf" id="uf">
-                <option value="0">Selecione uma UF</option>
+              <select name="uf" id="uf" value={selectedUf} onChange={handelSelectedUf}>
+                <option value="">Selecione uma UF</option>
+                {ufs.map(uf => (
+                  <option value={uf} key={uf} >{uf}</option>
+                ))}
               </select>
             </div>
             <div className="field">
               <label htmlFor="cidade">cidade</label>
-              <select name="cidade" id="cidade">
+              <select name="cidade" id="cidade" value={selectedCity} onChange={handelSelectedCity} >
                 <option value="0">Selecione uma cidade</option>
+                {cities.map(city => (
+                  <option value={city} key={city} >{city}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -92,30 +163,12 @@ const CreatePoint = () => {
           </legend>
 
           <ul className="items-grid">
-            <li>
-              <img src="http://localhost:3333/uploads/oleo.svg" alt="" />
-              <span>Óleo de cozinha</span>
-            </li>
-            <li className="selected">
-              <img src="http://localhost:3333/uploads/oleo.svg" alt="" />
-              <span>Óleo de cozinha</span>
-            </li>
-            <li>
-              <img src="http://localhost:3333/uploads/oleo.svg" alt="" />
-              <span>Óleo de cozinha</span>
-            </li>
-            <li>
-              <img src="http://localhost:3333/uploads/oleo.svg" alt="" />
-              <span>Óleo de cozinha</span>
-            </li>
-            <li>
-              <img src="http://localhost:3333/uploads/oleo.svg" alt="" />
-              <span>Óleo de cozinha</span>
-            </li>
-            <li>
-              <img src="http://localhost:3333/uploads/oleo.svg" alt="" />
-              <span>Óleo de cozinha</span>
-            </li>
+            {items.map(item => (
+              <li key={item.id}>
+                <img src={item.imageUrl} alt={item.name} />
+                <span>{item.name}</span>
+              </li>
+            ))}
           </ul>
         </fieldset>
         <button type="submit">Cadastrar ponto de coleta</button>
